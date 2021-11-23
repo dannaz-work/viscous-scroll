@@ -6,44 +6,44 @@ import React, {
   useRef,
 } from "react";
 
-import styles from "./ViewportContainer.module.scss";
+import styles from "components/Step4/ViewportContainer/ViewportContainer.module.scss";
 
-type PageState = {
+export type PageState = {
   type: "scroll" | "freeze";
   maxY: number;
 };
 
-type Config = Array<PageState>;
-
-const viewportMovingConfig: Config = [
-  { maxY: 500, type: "scroll" },
-  { maxY: 1500, type: "freeze" },
-];
+export type Config = Array<PageState>;
 
 const INITIAL_STATE: PageState = { maxY: 0, type: "scroll" };
 const FINAL_STATE: PageState = { maxY: Infinity, type: "scroll" };
 
+export type ViewportContainerProps = {
+  config: Config;
+};
+
 export const ViewportContainer = ({
+  config,
   children,
-}: PropsWithChildren<unknown>): ReactElement => {
+}: PropsWithChildren<ViewportContainerProps>): ReactElement => {
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
 
   let currentStateIndex = 0;
-  let currentState = viewportMovingConfig[currentStateIndex];
+  let currentState = config[currentStateIndex];
   let currentY = 0;
-  let currentFreezeHeight;
+  let currentFreezeHeight = 0;
 
   const totalFreezeHeight = useMemo(() => {
     let _totalFreezeHeight = 0;
-    viewportMovingConfig.forEach((state, index) => {
+    config.forEach((state, index) => {
       if (state.type === "freeze") {
-        const prevY = index > 0 ? viewportMovingConfig[index - 1].maxY : 0;
+        const prevY = index > 0 ? config[index - 1].maxY : 0;
         _totalFreezeHeight += state.maxY - prevY;
       }
     });
     return _totalFreezeHeight;
-  }, [viewportMovingConfig]);
+  }, [config]);
 
   const getCurrentY = (scrollPosition: number): number => {
     if (scrollPosition <= currentState.maxY && currentState.type === "scroll") {
@@ -54,19 +54,25 @@ export const ViewportContainer = ({
 
   // Return current page state, depends on scrollPosition Y
   const getCurrentPageState = (scrollPosition: number): PageState => {
-    const prevState =
-      viewportMovingConfig[currentStateIndex - 1] || INITIAL_STATE;
-    const nextState =
-      viewportMovingConfig[currentStateIndex + 1] || FINAL_STATE;
+    const prevState = config[currentStateIndex - 1] || INITIAL_STATE;
+    const nextState = config[currentStateIndex + 1] || FINAL_STATE;
 
     if (scrollPosition <= prevState.maxY) {
       currentStateIndex -= 1;
+      if (currentState.type === "freeze") {
+        currentFreezeHeight = getCurrentFreezeHeight();
+      }
       return prevState;
     }
     if (scrollPosition <= currentState.maxY) {
       return currentState;
     }
     currentStateIndex += 1;
+
+    if (currentState.type === "freeze") {
+      currentFreezeHeight = getCurrentFreezeHeight();
+    }
+
     return nextState;
   };
 
@@ -74,13 +80,10 @@ export const ViewportContainer = ({
   const getCurrentFreezeHeight = (): number => {
     let updatedFreezeHeight = 0;
     for (let i = 0; i <= currentStateIndex; i++) {
-      if (
-        viewportMovingConfig[i] &&
-        viewportMovingConfig[i].type === "freeze"
-      ) {
-        const prevState = viewportMovingConfig[i - 1];
+      if (config[i] && config[i].type === "freeze") {
+        const prevState = config[i - 1];
         updatedFreezeHeight +=
-          viewportMovingConfig[i].maxY - (prevState ? prevState.maxY : 0);
+          config[i].maxY - (prevState ? prevState.maxY : 0);
       }
     }
     return updatedFreezeHeight;
@@ -91,7 +94,6 @@ export const ViewportContainer = ({
     const y = window.scrollY;
     if (contentRef.current) {
       currentState = getCurrentPageState(y);
-      currentFreezeHeight = getCurrentFreezeHeight();
       currentY = getCurrentY(y);
 
       contentRef.current.style.transform = `translateY(-${
