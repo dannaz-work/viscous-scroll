@@ -29,8 +29,6 @@ export const ViewportContainer = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
 
-  let currentStateIndex = 0;
-  let currentState = config[currentStateIndex];
   let currentY = 0;
   let currentFreezeHeight = 0;
 
@@ -51,6 +49,9 @@ export const ViewportContainer = ({
     }
     return currentY;
   };
+
+  let currentStateIndex = 0;
+  let currentState = config[currentStateIndex];
 
   // Return current page state, depends on scrollPosition Y
   const getCurrentPageState = (scrollPosition: number): PageState => {

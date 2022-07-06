@@ -86,7 +86,6 @@ export const ViewportContainer = ({
     return updatedFreezeHeight;
   };
 
-  // Linearly changing transform value on every scroll event
   const handleScroll = (): void => {
     const y = window.scrollY;
     if (contentRef.current) {
